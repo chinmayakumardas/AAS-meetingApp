@@ -1,0 +1,13 @@
+{
+  "name": "AAS-MeetingApp",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "client": "cd client && npm run dev",
+    "server": "cd server && npm run dev",
+    "dev": "concurrently \"npm run client\" \"npm run server\" --names \"CLIENT,SERVER\" --prefix-colors \"blue,green\""
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}
