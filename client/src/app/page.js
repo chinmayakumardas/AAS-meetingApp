@@ -1,101 +1,140 @@
+"use client";
+import { useRouter } from "next/navigation"; // Import the useRouter hook
 import Image from "next/image";
-
+import { useState } from "react";
+import LoginPopup from "@/components/auth/LoginPopup";
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.js
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  const [isLoginOpen, setIsLoginOpen] = useState(false);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+  return (
+    <div className="min-h-screen flex flex-col bg-gray-50">
+      {/* HEADER */}
+      <header className="w-full bg-white fixed top-0 left-0 right-0 z-10">
+        <div className="max-w-7xl mx-auto px-6 sm:px-12 lg:px-6 py-4 flex justify-between items-center">
+          <div className="flex flex-col items-start">
+            <h1 className="text-sm sm:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-600">
+              AAS INTERNATIONAL
+            </h1>
+            <p className="text-sm sm:text-xl font-medium text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-600">
+              Our Quality is Your Success
+            </p>
+          </div>
+          {/* Button to redirect to the login page */}
+          <button
+            onClick={() => setIsLoginOpen(!isLoginOpen)} // Trigger navigation to /login
+            className="bg-blue-600 text-white px-6 py-2 sm:px-8 sm:py-3 rounded-lg hover:bg-blue-700 text-sm sm:text-base"
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+            Login
+          </button>
+        </div>
+      </header>
+
+      {/* MAIN HERO SECTION */}
+      <main className="flex-grow py-12 mt-20 px-6 sm:px-12">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 gap-8 justify-between items-center">
+          {/* LEFT SIDE: APP INTRODUCTION */}
+          <section className="flex flex-col justify-between text-center sm:text-left">
+            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 flex-grow">
+              Organize Meetings & <br /> Take Notes Easily
+            </h2>
+            <p className="mt-4 text-lg sm:text-xl text-gray-600 flex-grow">
+              A seamless way to manage your meetings, collaborate with teams, and keep track of notes—all in one place.
+            </p>
+            <div className="mt-6 flex flex-col sm:flex-row gap-4">
+              {/* Redirect button */}
+              <button
+                onClick={() => setIsLoginOpen(!isLoginOpen)} // Trigger navigation to /login
+                className="bg-blue-600 text-white px-6 py-3 sm:px-8 sm:py-4 rounded-lg hover:bg-blue-700 text-sm sm:text-lg"
+              >
+                Create Meeting
+              </button>
+              <button
+                onClick={() => setIsLoginOpen(!isLoginOpen)} // Trigger navigation to /login
+                className="bg-gray-200 text-gray-800 px-6 py-3 sm:px-8 sm:py-4 rounded-lg hover:bg-gray-300 text-sm sm:text-lg"
+              >
+                View Notes
+              </button>
+            </div>
+          </section>
+
+          {/* RIGHT SIDE: APP VISUAL */}
+          <section className="flex justify-center sm:justify-end">
+            <div className="relative">
+              <Image
+                src="/hero-image.jpg"
+                alt="Meeting & Notes"
+                width={500}
+                height={400}
+                className="rounded-lg shadow-lg transition-transform duration-700 ease-in-out transform hover:scale-105"
+              />
+            </div>
+          </section>
         </div>
       </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
+
+       {/* MEETING & NOTES SECTION */}
+       <section className="w-full py-12 px-6 sm:px-12">
+        <div className="max-w-7xl mx-auto">
+          <h3 className="text-2xl sm:text-3xl font-semibold text-gray-900 text-center sm:text-left">
+            Features
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mt-6">
+
+            {/* CREATE MEETING */}
+            <div className="bg-white p-6 rounded-lg shadow-lg flex flex-col items-center text-center">
+              <h4 className="text-xl sm:text-2xl font-semibold text-gray-800">🔗 Create & Join Meetings</h4>
+              <p className="mt-2 text-gray-600">Start a meeting instantly or join an existing one.</p>
+              <button
+                onClick={() => setIsLoginOpen(!isLoginOpen)}
+                className="mt-4 bg-blue-600 text-white px-6 py-2 sm:px-8 sm:py-3 rounded-lg hover:bg-blue-700 text-sm sm:text-base"
+              >
+                Start Meeting
+              </button>
+            </div>
+
+            {/* TAKE NOTES */}
+            <div className="bg-white p-6 rounded-lg shadow-lg flex flex-col items-center text-center">
+              <h4 className="text-xl sm:text-2xl font-semibold text-gray-800">📝 Take & Save Notes</h4>
+              <p className="mt-2 text-gray-600">Record key points & collaborate with  team.</p>
+              <button
+                onClick={() => setIsLoginOpen(!isLoginOpen)}
+                className="mt-4 bg-gray-200 text-gray-800 px-6 py-2 sm:px-8 sm:py-3 rounded-lg hover:bg-gray-300 text-sm sm:text-base"
+              >
+                View Notes
+              </button>
+            </div>
+
+            {/* INTEGRATIONS */}
+            <div className="bg-white p-6 rounded-lg shadow-lg flex flex-col items-center text-center">
+              <h4 className="text-xl sm:text-2xl font-semibold text-gray-800">📅 Sync with Calendar</h4>
+              <p className="mt-2 text-gray-600">Integrate meetings with your work calendar.</p>
+              <button
+                onClick={() => setIsLoginOpen(!isLoginOpen)}
+                className="mt-4 bg-green-600 text-white px-6 py-2 sm:px-8 sm:py-3 rounded-lg hover:bg-green-700 text-sm sm:text-base"
+              >
+                Sync Now
+              </button>
+            </div>
+
+          </div>
+        </div>
+      </section>
+      
+      {/* FOOTER */}
+      <footer className="w-full py-6 border-t mt-8">
+        <div className="max-w-7xl mx-auto px-6 sm:px-12 flex justify-center gap-6">
+          <a className="text-gray-700 hover:underline" href="#" target="_blank">
+            AAS
+          </a>
+          <a className="flex items-center gap-2 text-gray-700 hover:underline" href="https://aasint.com" target="_blank">
+            Go to AASInt.com →
+          </a>
+        </div>
       </footer>
+
+       {/* LOGIN POPUP */}
+            <LoginPopup isOpen={isLoginOpen} onClose={() => setIsLoginOpen(!isLoginOpen)} />
+         
     </div>
   );
 }
