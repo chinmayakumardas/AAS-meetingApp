@@ -1,290 +1,249 @@
-
-
-"use client";
-
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { AiOutlineCheck, AiOutlineClose } from "react-icons/ai";
+import { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { loginUser, verifyOtpForLogin, resetPassword, verifyOtpAndResetPassword } from '../../redux/AuthSlice';
+import { toast } from 'react-toastify';
+import { useRouter } from 'next/navigation';
+import { loginUser, verifyOtpForLogin, resendOtp, resetPassword } from '../../redux/AuthSlice';
 
 export default function LoginPopup({ isOpen, onClose }) {
-  if (!isOpen) return null;
+  const [emailOrUsername, setEmailOrUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [otp, setOtp] = useState(Array(6).fill('')); // OTP fields
+  const [isOtpSent, setIsOtpSent] = useState(false);
+  const [isOtpVerified, setIsOtpVerified] = useState(false);
+  const [isResetPassword, setIsResetPassword] = useState(false); // Toggle for Reset Password Form
+  const [showPassword, setShowPassword] = useState(false); // For password view toggle
+  const [loading, setLoading] = useState(false);
 
   const dispatch = useDispatch();
   const router = useRouter();
+  const { isAuthenticated } = useSelector((state) => state.auth);
 
-  const [isLogin, setIsLogin] = useState(true);
-  const [emailOrUsername, setEmailOrUsername] = useState("");  // Changed to emailOrUsername
-  const [password, setPassword] = useState("Chin@2025");
-  const [otp, setOtp] = useState(["", "", "", "", "", ""]);
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-
-  // Redux states
-  const { loading, error, user, isAuthenticated } = useSelector((state) => state.auth);
-
-  const [otpSent, setOtpSent] = useState(false);
-  const [otpVerified, setOtpVerified] = useState(false);
-  const [toastMessage, setToastMessage] = useState("");
-  const [toastType, setToastType] = useState("");
-  const [toastProgress, setToastProgress] = useState(0);
-
-  // Handle Toast Display
   useEffect(() => {
-    if (toastMessage) {
-      const progressInterval = setInterval(() => {
-        setToastProgress((prev) => prev + 10);
-      }, 300);
-
-      const timeout = setTimeout(() => {
-        setToastMessage("");
-        setToastProgress(0);
-      }, 3000);
-
-      return () => {
-        clearInterval(progressInterval);
-        clearTimeout(timeout);
-      };
+    // Only redirect if authenticated
+    if (isAuthenticated && isOtpVerified) {
+      router.push('/dashboard');
     }
-  }, [toastMessage]);
+  }, [isAuthenticated, isOtpVerified, router]);
 
-  const showToast = (message, type) => {
-    setToastMessage(message);
-    setToastType(type);
-  };
-
-  const handleSubmit = () => {
-    if (!emailOrUsername || !password) return;
-
-    // Check if emailOrUsername looks like an email
-    const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailOrUsername);
-
-    dispatch(loginUser({ emailOrUsername, password })).then((result) => {
-      if (result.meta.requestStatus === 'fulfilled') {
-        setOtpSent(true);
-        showToast("OTP Sent!", "success");
-      } else {
-        showToast("Invalid credentials.", "error");
-      }
-    });
-  };
-
-  const handleOtpVerification = () => {
-    if (otp.includes("") || otp.length !== 6) return;
-
-    const otpCode = otp.join("");
-    dispatch(verifyOtpForLogin({ emailOrUsername, otp: otpCode })).then((result) => {
-      if (result.meta.requestStatus === 'fulfilled') {
-        setOtpVerified(true);
-        showToast("OTP Verified!", "success");
-        router.push("/notes"); // Navigate to notes after OTP is verified
-      } else {
-        showToast("Invalid OTP.", "error");
-      }
-    });
-  };
-
-  const handlePasswordReset = () => {
-    if (!newPassword || !confirmPassword) return;
-
-    if (newPassword === confirmPassword) {
-      dispatch(resetPassword({ emailOrUsername, newPassword })).then((result) => {
-        if (result.meta.requestStatus === 'fulfilled') {
-          showToast("Password Reset Successfully!", "success");
-          setIsLogin(true);
-          setPassword(newPassword);
-          setOtpSent(false);
-          setOtpVerified(false);
-        } else {
-          showToast("Error resetting password.", "error");
-        }
-      });
-    } else {
-      showToast("Passwords do not match.", "error");
-    }
-  };
-
-  // Ensure the modal behavior works only on the client-side
   useEffect(() => {
+    const handleOutsideClick = (e) => {
+      if (e.target === e.currentTarget) {
+        onClose();
+      }
+    };
+
     if (isOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "auto";
+      document.addEventListener('mousedown', handleOutsideClick);
     }
 
     return () => {
-      document.body.style.overflow = "auto";
+      document.removeEventListener('mousedown', handleOutsideClick);
     };
-  }, [isOpen]);
+  }, [isOpen, onClose]);
 
-  const closeModal = () => {
-    onClose();
-    setIsLogin(true);
-    setEmailOrUsername("");  // Reset emailOrUsername
-    setPassword("Chin@2025");
-    setOtp(["", "", "", "", "", ""]);
-    setNewPassword("");
-    setConfirmPassword("");
-    setOtpSent(false);
-    setOtpVerified(false);
+  const handleFormSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+
+    if (isResetPassword) {
+      try {
+        await dispatch(resetPassword(emailOrUsername));
+        toast.success('OTP sent for password reset!');
+        setIsOtpSent(true);
+      } catch (error) {
+        toast.error('Failed to send OTP for reset password.');
+        setLoading(false);
+      }
+    } else {
+      // Basic validation for email/username and password
+      if (!emailOrUsername || !password) {
+        toast.error('Email/Username and Password are required.');
+        setLoading(false);
+        return;
+      }
+      try {
+        // Dispatch the login action to send OTP
+        await dispatch(loginUser({ emailOrUsername, password }));
+        toast.success('OTP Sent!');
+        setIsOtpSent(true); // Mark OTP as sent after successful login request
+      } catch (error) {
+        toast.error('Failed to send OTP');
+        setLoading(false);
+      }
+    }
   };
 
+  const handleOtpChange = (e, index) => {
+    const value = e.target.value;
+    if (/[0-9]/.test(value)) {
+      const newOtp = [...otp];
+      newOtp[index] = value;
+      setOtp(newOtp);
+
+      // Move to next field if filled
+      if (index < otp.length - 1 && value) {
+        document.getElementById(`otp-field-${index + 1}`).focus();
+      }
+    }
+  };
+
+  const handleOtpSubmit = async () => {
+    const otpString = otp.join('');
+    if (otpString.length !== 6) {
+      toast.error('Please fill all OTP fields.');
+      return;
+    }
+
+    try {
+      // Attempt OTP verification
+      const response = await dispatch(verifyOtpForLogin({ emailOrUsername, otp: otpString }));
+      if (response.payload?.token) {
+        setIsOtpVerified(true);
+        toast.success('OTP Verified');
+        // Redirect only after OTP is verified
+        router.push('/dashboard'); 
+      } else {
+        toast.error('Invalid OTP');
+      }
+    } catch (error) {
+      toast.error('Error verifying OTP');
+    }
+  };
+
+  const handleResendOtp = () => {
+    setLoading(true);
+    dispatch(resendOtp({ emailOrUsername }));
+    toast.success('OTP resent successfully.');
+    setLoading(false);
+  };
+
+  const handleToggleResetPassword = () => {
+    setIsResetPassword((prev) => !prev);
+    setIsOtpSent(false);
+    setOtp(Array(6).fill(''));
+    setEmailOrUsername('');
+    setPassword('');
+  };
+
+  const handlePasswordToggle = () => {
+    setShowPassword(!showPassword);
+  };
+
+  if (!isOpen) return null;
+
   return (
-    <>
-      {toastMessage && (
-        <div
-          className={`fixed top-0 left-0 right-0 p-4 bg-${toastType === "success" ? "green" : "red"}-500 text-white rounded-lg flex items-center w-full`}
-        >
-          {toastType === "success" ? (
-            <AiOutlineCheck className="mr-2 text-xl" />
-          ) : (
-            <AiOutlineClose className="mr-2 text-xl" />
-          )}
-          <span className="flex-1">{toastMessage}</span>
-          <div className="w-full h-1 bg-gray-200 rounded-full mt-2">
-            <div
-              className="h-1 bg-white rounded-full"
-              style={{ width: `${toastProgress}%` }}
+    <div className="fixed inset-0 bg-gray-500 bg-opacity-50 flex justify-center items-center z-50" onClick={(e) => e.target === e.currentTarget && onClose()}>
+      <div className="bg-white p-8 rounded-lg shadow-md w-full sm:w-96 relative">
+        <h2 className="text-2xl font-bold text-center mb-6 text-black">{isResetPassword ? 'Reset Password' : 'Login'}</h2>
+
+        <form onSubmit={handleFormSubmit} className="space-y-4">
+          <div>
+            <input
+              type="text"
+              className="w-full mt-2 p-3 border border-gray-300 rounded-md text-black"
+              placeholder="Enter Email or Username"
+              value={emailOrUsername}
+              onChange={(e) => setEmailOrUsername(e.target.value)}
+              required
             />
           </div>
-        </div>
-      )}
 
-      <div
-        onClick={closeModal}
-        className="fixed inset-0 bg-black bg-opacity-50 z-40 flex items-center justify-center"
-      >
-        <div
-          onClick={(e) => e.stopPropagation()}
-          className="bg-white p-6 rounded-lg shadow-lg w-80 md:w-96 lg:w-1/3 z-50"
-        >
-          <h2 className="text-lg font-semibold text-gray-900 text-center mb-4">
-            {isLogin ? "Login" : "Reset Password"}
-          </h2>
-
-          {error && (
-            <div className="text-red-500 text-center mb-4">
-              <p>{error.message || "An error occurred"}</p>
+          {!isResetPassword && (
+            <div>
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  className="w-full mt-2 p-3 border border-gray-300 rounded-md text-black"
+                  placeholder="Enter Password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+                <span
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 cursor-pointer"
+                  onClick={handlePasswordToggle}
+                >
+                  {showPassword ? '🙈' : '👁️'}
+                </span>
+              </div>
             </div>
           )}
 
-          <input
-            type="text"
-            placeholder="Email or Username"
-            className="mt-4 p-2 border w-full rounded text-black"
-            value={emailOrUsername}
-            onChange={(e) => setEmailOrUsername(e.target.value)}
-            disabled={loading}
-          />
-
-          {isLogin && !otpSent && (
-            <input
-              type="password"
-              placeholder="Password"
-              className="mt-4 p-2 border w-full rounded text-black"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              disabled={loading}
-            />
-          )}
-
-          {otpSent && !otpVerified && (
-            <div className="mt-4 flex space-x-2">
+          {isOtpSent && !isOtpVerified && (
+            <div className="flex justify-center space-x-2">
               {otp.map((digit, index) => (
                 <input
                   key={index}
                   type="text"
-                  value={digit}
+                  id={`otp-field-${index}`}
                   maxLength="1"
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    if (value.match(/^\d$/)) {
-                      const newOtp = [...otp];
-                      newOtp[index] = value;
-                      setOtp(newOtp);
-                      if (index < 5) document.getElementById(`otp-${index + 1}`).focus();
-                    }
-                  }}
-                  className="p-2 border w-full h-12 text-center text-black"
-                  id={`otp-${index}`}
-                  disabled={loading}
+                  className="w-12 h-12 border text-center text-black focus:outline-none"
+                  value={digit}
+                  onChange={(e) => handleOtpChange(e, index)}
+                  autoFocus={index === 0}
                 />
               ))}
             </div>
           )}
 
-          {isLogin === false && otpVerified && (
+          <div className="flex justify-between">
+            {isOtpSent && !isOtpVerified ? (
+              <button
+                type="button"
+                className="w-full bg-blue-500 text-white p-3 rounded-md"
+                onClick={handleOtpSubmit}
+                disabled={loading || otp.join('').length !== 6}
+              >
+                {loading ? 'Verifying OTP...' : 'Verify OTP'}
+              </button>
+            ) : (
+              <button
+                type="submit"
+                className="w-full bg-blue-500 text-white p-3 rounded-md"
+                disabled={loading}
+              >
+                {loading ? 'Sending OTP...' : isResetPassword ? 'Send OTP' : 'Sign In'}
+              </button>
+            )}
+          </div>
+        </form>
+
+        {isOtpSent && !isOtpVerified && (
+          <div className="mt-4 text-center">
+            <button
+              className="text-blue-600"
+              onClick={handleResendOtp}
+              disabled={loading}
+            >
+              Resend OTP
+            </button>
+          </div>
+        )}
+
+        <div className="mt-6 text-center text-sm">
+          {isResetPassword ? (
             <>
-              <input
-                type="password"
-                placeholder="New Password"
-                className="mt-4 p-2 border w-full rounded text-black"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                disabled={loading}
-              />
-              <input
-                type="password"
-                placeholder="Confirm Password"
-                className="mt-4 p-2 border w-full rounded text-black"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                disabled={loading}
-              />
+              <span className="text-black">Back to login?</span>
+              <button
+                className="text-blue-600 ml-2"
+                onClick={handleToggleResetPassword}
+              >
+                Login
+              </button>
+            </>
+          ) : (
+            <>
+              <span className="text-black">Forgot password? </span>
+              <button
+                className="text-blue-600 ml-2"
+                onClick={handleToggleResetPassword}
+              >
+                Reset Password
+              </button>
             </>
           )}
-
-          <div className="mt-4 flex items-center justify-between">
-            <button
-              onClick={isLogin ? handleSubmit : handlePasswordReset}
-              className="bg-blue-600 text-white px-4 py-2 rounded flex items-center"
-              disabled={loading || !emailOrUsername || (isLogin && !password) || (isLogin === false && !otpVerified && (!newPassword || !confirmPassword))}
-            >
-              {loading ? (
-                <>
-                  <span className="mr-2">{isLogin ? "Logging In" : "Resetting..."}</span>
-                  <div className="animate-pulse flex space-x-2">
-                    <span className="h-2 w-2 rounded-full bg-white"></span>
-                    <span className="h-2 w-2 rounded-full bg-white"></span>
-                    <span className="h-2 w-2 rounded-full bg-white"></span>
-                  </div>
-                </>
-              ) : isLogin ? (
-                otpSent ? (
-                  "Verify OTP"
-                ) : (
-                  "Send OTP"
-                )
-              ) : otpVerified ? (
-                "Reset Password"
-              ) : (
-                "Send OTP"
-              )}
-            </button>
-
-            <div className="mt-4 flex items-center">
-              {!isLogin && !otpVerified && (
-                <p
-                  onClick={() => setIsLogin(true)}
-                  className="text-blue-500 cursor-pointer mr-4"
-                >
-                  Back to Login
-                </p>
-              )}
-
-              {isLogin && !otpSent && !otpVerified && (
-                <p
-                  onClick={() => setIsLogin(false)}
-                  className="text-blue-500 cursor-pointer"
-                >
-                  Reset Password?
-                </p>
-              )}
-            </div>
-          </div>
         </div>
       </div>
-    </>
+    </div>
   );
 }

@@ -5,7 +5,9 @@ import { useState } from "react";
 import LoginPopup from "@/components/auth/LoginPopup";
 export default function Home() {
   const [isLoginOpen, setIsLoginOpen] = useState(false);
-
+  const handleClose = () => {
+    setIsLoginOpen(false);
+  };
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       {/* HEADER */}
@@ -21,7 +23,7 @@ export default function Home() {
           </div>
           {/* Button to redirect to the login page */}
           <button
-            onClick={() => setIsLoginOpen(!isLoginOpen)} // Trigger navigation to /login
+            onClick={() => setIsLoginOpen(true)} // Trigger navigation to /login
             className="bg-blue-600 text-white px-6 py-2 sm:px-8 sm:py-3 rounded-lg hover:bg-blue-700 text-sm sm:text-base"
           >
             Login
@@ -133,7 +135,7 @@ export default function Home() {
       </footer>
 
        {/* LOGIN POPUP */}
-            <LoginPopup isOpen={isLoginOpen} onClose={() => setIsLoginOpen(!isLoginOpen)} />
+            <LoginPopup isOpen={isLoginOpen} onClose={handleClose} />
          
     </div>
   );
